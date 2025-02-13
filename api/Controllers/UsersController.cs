@@ -10,17 +10,17 @@ namespace api.Controllers
     {
         [HttpGet]
         public async Task<ActionResult<IEnumerable<AppUser>>> GetUsers() =>
-            Ok(await ctx.Users.ToListAsync());
+            await ctx.Users.ToListAsync();
             
 
-        [HttpGet("id:int")]
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<AppUser>> GetUsers(int id) {
             var usr = await ctx.Users.FindAsync(id);
 
-            if(usr != null)
-                return Ok(usr);
-            else
+            if(usr == null)
                 return NotFound();
+            
+            return usr;
         } 
     }
 }
