@@ -1,6 +1,5 @@
 using API.Data;
 using API.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,6 +22,5 @@ namespace api.Controllers
             else
                 return NotFound();
         } 
-            
     }
 }
