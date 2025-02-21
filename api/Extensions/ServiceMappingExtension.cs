@@ -56,6 +56,7 @@ public static class ServiceMappingExtension
             ValidateAudience = false,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey))
         };
+        
     private static string GetTokenKey(WebApplicationBuilder builder) =>
         builder.Configuration["TokenKey"] ?? throw new Exception("TokenKey property not configured");
 }
