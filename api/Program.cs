@@ -11,7 +11,7 @@ builder.Services
 
 var app = builder.Build();
 
-app.UseCors(config => config.AllowAnyHeader().AllowAnyMethod())
+app.UseCors(cfg => cfg.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin())
     .UseHttpsRedirection();
 app.MapControllers();
 
