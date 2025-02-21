@@ -1,7 +1,7 @@
 <app-nav></app-nav>
 
 <div class="container" style="margin-top: 100px;">
-    <table style="border-style:  dashed; border-width: 1px;">
+    <table *ngIf="_isLoggedIn" style="border-style:  dashed; border-width: 1px;">
         <tr>
             <th>Id</th>
             <th>Nome</th>
