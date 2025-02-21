@@ -11,6 +11,16 @@ namespace api.Controllers
 {
     public class AccountController(DataContext ctx, ITokenService tokenSvc) : BaseApiController
     {
+        [HttpGet("GetTestUser")]
+        public async Task<ActionResult<UserCredential>> GetTestUser() {
+            if(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
+                return await this.Login(new LoginRequestParameters{
+                    UserName = "mike",
+                    Password = "#{i-doN)lTQc"
+                });
+            else return NotFound("?");
+        }
+
         [HttpPost("login")]
         public async Task<ActionResult<UserCredential>> Login(LoginRequestParameters req){
             try

@@ -1,10 +1,12 @@
 using API.Data;
 using API.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace api.Controllers
 {
+    [Authorize]
     public class UsersController(DataContext ctx) : BaseApiController
     {
         [HttpGet]
