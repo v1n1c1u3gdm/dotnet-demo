@@ -2,25 +2,26 @@ using System.Security.Cryptography;
 using System.Text;
 using API.Data;
 using API.DTOs;
+using API.Interfaces;
 using API.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace api.Controllers
 {
-    public class AccountController(DataContext ctx) : BaseApiController
+    public class AccountController(DataContext ctx, ITokenService tokenSvc) : BaseApiController
     {
         [HttpPost("login")]
-        public async Task<ActionResult<AppUser>> Login(LoginRequestParameters req){
+        public async Task<ActionResult<UserCredential>> Login(LoginRequestParameters req){
             try
             {
                 var user = await ctx.Users.SingleAsync(u => u.UserName == req.UserName.ToLower());
                 using var hmac = new HMACSHA512(user.PassowordSalt);
 
-                var givenPassword = hmac.ComputeHash(Encoding.UTF8.GetBytes(req.Password));
-                if(!givenPassword.SequenceEqual(user.PasswordHash)) return Unauthorized("Invalid password");
+                var givenHashedPassword = hmac.ComputeHash(Encoding.UTF8.GetBytes(req.Password));
+                if (!givenHashedPassword.SequenceEqual(user.PasswordHash)) return Unauthorized("Invalid password");
 
-                return user;
+                return MapAndCreateToken(user);
             }
             catch (Exception ex)
             {
@@ -29,7 +30,7 @@ namespace api.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<ActionResult<AppUser>> Register(RegisterRequestParameters req){
+        public async Task<ActionResult<UserCredential>> Register(RegisterRequestParameters req){
             if (await UserExists(req.UserName))
                 return BadRequest($"Username {req.UserName} already in use. Please choose another name");
 
@@ -44,8 +45,15 @@ namespace api.Controllers
             ctx.Users.Add(user);
             await ctx.SaveChangesAsync();
 
-            return user;
+            return MapAndCreateToken(user);
         }
+
+        private UserCredential MapAndCreateToken(AppUser user) =>
+            new ()
+            {
+                UserName = user.UserName,
+                Token = tokenSvc.CreateToken(user)
+            };
 
         private Task<bool> UserExists(string username) =>
             ctx.Users.AnyAsync(u => u.UserName.ToLower().Equals(username.ToLower()));
