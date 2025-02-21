@@ -1,11 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component, inject, OnInit } from '@angular/core';
-import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { NavComponent } from "./nav/nav.component";
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule],
+  imports: [CommonModule, NavComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
