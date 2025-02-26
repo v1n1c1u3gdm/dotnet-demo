@@ -1,32 +1,50 @@
 import { HttpClient } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
 import { IUser } from '../models/User';
-import { map } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 
 export class AccountService {
-  private _client = inject(HttpClient);
-  private _currentUser: IUser = { username: "", token: "" };
-  private _baseUrl = 'https://localhost:5001/api/account/'
+  private readonly _client = inject(HttpClient);
+  private readonly _baseUrl = 'https://localhost:5001/api/account/';
+  public currentUser: IUser = { username: "", token: "" };
+  public requestedUser = signal<any>({ username: "", password: "" });
 
-  public login(model: IUser) {
-    return this._client.post<IUser>(this._baseUrl + "login", model)
-      .subscribe(response => {
-        this._currentUser = response;
-        localStorage.setItem("user", JSON.stringify(response));
-      });
+  public login(model: any) {
+    return this._client.post<IUser>(this._baseUrl + "login", this.requestedUser())
+      .subscribe(
+        {
+          next: apiUser => {
+            localStorage.setItem("user", JSON.stringify(apiUser));
+            this.currentUser = apiUser;
+            this.requestedUser.set(apiUser);
+          },
+          error: e => console.log(e)
+        });
   }
 
   public logout() {
     localStorage.removeItem("user");
-    this._currentUser = { username: "", token: "" };
+    this.currentUser = { username: "", token: "" };
+    this.requestedUser.set(null);
   }
 
-  public isLoggedin(): boolean {
-    if (localStorage.getItem("user") && this._currentUser) return true
+  public register(model: any) {
+    return this._client.post<IUser>(this._baseUrl + "register", this.requestedUser())
+      .subscribe({
+        next: apiUser => {
+          localStorage.setItem("user", JSON.stringify(apiUser));
+          this.currentUser = apiUser;
+          this.requestedUser.set(apiUser);
+        },
+        error: e => console.log(e)
+      });
+  }
+
+  public isLoggedIn(): boolean {
+    if (localStorage.getItem("user") && this.currentUser && this.requestedUser()) return true
     else return false;
   }
 }

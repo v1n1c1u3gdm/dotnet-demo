@@ -1,17 +1,23 @@
-<nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+<nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark py-3">
     <div class="container">
-        <a class="navbar-brand" href="#">Dotnet demo</a>
+        <a class="navbar-brand" href="#">Estradistas Bhd</a>
 
         @if(isLoggedIn()){
         <ul class="navbar-nav me-auto mb-2 mb-md-0">
             <li class="nav-item">
-                <a class="nav-link" href="#">Matches</a>
+                <a class="nav-link" href="#">Viagens</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#">Lists</a>
+                <a class="nav-link" href="#">Papo MC</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#">Messages</a>
+                <a class="nav-link" href="#">Montaria</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">Oficinas</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">Lojas</a>
             </li>
         </ul>
         }
@@ -19,17 +25,19 @@
         @if(!isLoggedIn()){
         <form #loginForm="ngForm" (ngSubmit)="login()" class="d-flex" autocomplete="off">
             <input name="username" [(ngModel)]="model.username" class="form-control me-2" placeholder="username">
-            <input name="password" [(ngModel)]="model.password" class="form-control me-2" placeholder="password" type="password">
+            <input name="password" [(ngModel)]="model.password" class="form-control me-2" placeholder="password"
+                type="password">
             <button class="btn btn-outline-success" type="submit">Login</button>
         </form>
         }
         @else {
         <div dropdown class="dropdown">
-            <a dropdownToggle class="dropdown-toggle text-light text-decoration-none">Welcome {{model.username}}</a>
+            <a dropdownToggle class="dropdown-toggle text-light text-decoration-none">Welcome
+                {{_accountService.requestedUser()?.username}}</a>
             <div *dropdownMenu="" class="dropdown-menu">
-                <a href="#" class="dropdown-item">Edit profile</a>
+                <a class="dropdown-item">Edit profile</a>
                 <div class="dropdown-divider"></div>
-                <a href="#" class="dropdown-item" (click)="logout()">Logout</a>
+                <a class="dropdown-item" (click)="logout()">Logout</a>
             </div>
         </div>
         }

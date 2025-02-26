@@ -3,27 +3,33 @@ import { HttpClient } from '@angular/common/http';
 import { Component, Inject, inject, OnInit } from '@angular/core';
 import { NavComponent } from "./nav/nav.component";
 import { AccountService } from './services/account.service';
+import { HomeComponent } from "./home/home.component";
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, NavComponent, NgIf],
+  imports: [CommonModule, NavComponent, HomeComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
 
 export class AppComponent implements OnInit {
+
   title = 'client';
   protected _accountService = inject(AccountService);
-  private _client = Inject(HttpClient);
-  users: any;
 
   ngOnInit(): void {
-    // if(this._accountService.isLoggedin()){
-    //   this.users = localStorage
+    //check user is loggedin, if its valid user and revalidate session
+    this.setCurrentUser();
+  }
+
+  setCurrentUser(): any {
+    if (this._accountService.isLoggedIn()) {
+      let userStr = localStorage.getItem("user");
+      if (userStr) {
+        let user = JSON.parse(userStr);
+        this._accountService.currentUser = user;
+        this._accountService.requestedUser.set(user);
+      }
     }
-
-  getUsers(){
-    this._client.get("https://localhost:5001/api/Users").subscribe();
-
   }
 }

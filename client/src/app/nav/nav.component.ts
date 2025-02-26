@@ -1,8 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms'
 import { AccountService } from '../services/account.service';
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown';
-import { IUser } from '../models/User';
 
 @Component({
   selector: 'app-nav',
@@ -11,20 +10,20 @@ import { IUser } from '../models/User';
   styleUrl: './nav.component.css'
 })
 export class NavComponent {
-  model: any = {};
-  private _accountService = inject(AccountService);
+  protected _accountService = inject(AccountService);
+  protected model: any = { username: "", password: "" };
 
-  logout() {
+  public logout() {
     this._accountService.logout();
   }
 
-  login() {
-    if(!this._accountService.isLoggedin()){
+  public login() {
+    if (!this._accountService.isLoggedIn()) {
       this._accountService.login(this.model);
     }
   }
 
-  isLoggedIn(): boolean{
-    return this._accountService.isLoggedin();
+  public isLoggedIn(): boolean {
+    return this._accountService.isLoggedIn();
   }
 }
