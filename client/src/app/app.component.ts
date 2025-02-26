@@ -1,7 +1,8 @@
 import { CommonModule, NgIf } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, Inject, inject, OnInit } from '@angular/core';
 import { NavComponent } from "./nav/nav.component";
+import { AccountService } from './services/account.service';
 
 @Component({
   selector: 'app-root',
@@ -12,9 +13,17 @@ import { NavComponent } from "./nav/nav.component";
 
 export class AppComponent implements OnInit {
   title = 'client';
-  client = inject(HttpClient);
+  protected _accountService = inject(AccountService);
+  private _client = Inject(HttpClient);
   users: any;
-  protected _isLoggedIn: boolean = false;
 
-  ngOnInit(): void { }
+  ngOnInit(): void {
+    // if(this._accountService.isLoggedin()){
+    //   this.users = localStorage
+    }
+
+  getUsers(){
+    this._client.get("https://localhost:5001/api/Users").subscribe();
+
+  }
 }
