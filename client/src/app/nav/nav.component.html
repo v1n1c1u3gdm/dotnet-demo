@@ -1,24 +1,24 @@
 <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark py-3">
     <div class="container">
-        <a class="navbar-brand" href="#">Estradistas Bhd</a>
+        <a class="navbar-brand" routerLink="/">Estradistas Bhd</a>
 
         @if(isLoggedIn()){
         <ul class="navbar-nav me-auto mb-2 mb-md-0">
             <li class="nav-item">
-                <a class="nav-link" href="#">Viagens</a>
+                <a class="nav-link" routerLink="/travel-plan">Viagens</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#">Papo MC</a>
+                <a class="nav-link" routerLink="/messages">Papo MC</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#">Montaria</a>
+                <a class="nav-link" routerLink="/bikes">Montaria</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#">Oficinas</a>
+                <a class="nav-link" routerLink="/workshops">Oficinas</a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#">Lojas</a>
-            </li>
+            <!-- <li class="nav-item">
+                <a class="nav-link" >Lojas</a>
+            </li> -->
         </ul>
         }
 

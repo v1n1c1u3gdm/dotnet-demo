@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
 import { IUser } from '../models/User';
 
@@ -11,18 +11,19 @@ export class AccountService {
   private readonly _baseUrl = 'https://localhost:5001/api/account/';
   public currentUser: IUser = { username: "", token: "" };
   public requestedUser = signal<any>({ username: "", password: "" });
-
+  private readonly httpOptions = {
+    headers: new HttpHeaders({ 'Content-Type': 'application/json' })
+  }
   public login(model: any) {
-    return this._client.post<IUser>(this._baseUrl + "login", this.requestedUser())
-      .subscribe(
-        {
-          next: apiUser => {
-            localStorage.setItem("user", JSON.stringify(apiUser));
-            this.currentUser = apiUser;
-            this.requestedUser.set(apiUser);
-          },
-          error: e => console.log(e)
-        });
+    return this._client.post<IUser>(this._baseUrl + "login", model, this.httpOptions)
+      .subscribe({
+        next: apiUser => {
+          localStorage.setItem("user", JSON.stringify(apiUser));
+          this.currentUser = apiUser;
+          this.requestedUser.set(apiUser);
+        },
+        error: e => console.log(e)
+      });
   }
 
   public logout() {
@@ -32,7 +33,7 @@ export class AccountService {
   }
 
   public register(model: any) {
-    return this._client.post<IUser>(this._baseUrl + "register", this.requestedUser())
+    return this._client.post<IUser>(this._baseUrl + "register", model, this.httpOptions)
       .subscribe({
         next: apiUser => {
           localStorage.setItem("user", JSON.stringify(apiUser));
