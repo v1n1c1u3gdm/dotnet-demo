@@ -15,7 +15,7 @@ export class RegisterComponent {
 
   register() {
     this._accountService.register(this.model);
-    
+    this._accountService.requestedUser.set(this.model);
     this.cancel();
   }
 
