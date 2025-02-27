@@ -10,7 +10,7 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace api.Extensions;
 
-public static class ServiceMappingExtension
+public static class ApplicationConfigurationExtension
 {
     public static WebApplicationBuilder ConfigureApplicationServices(this WebApplicationBuilder builder)
     {
@@ -24,7 +24,8 @@ public static class ServiceMappingExtension
                 .AddCors()
                 .AddDbContext<DataContext>(opt =>
                     opt.UseSqlite(builder.Configuration.GetConnectionString("Default"))
-                ).AddControllers().AddJsonOptions(opts => {
+                ).AddControllers().AddJsonOptions(opts =>
+                {
                     opts.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
                     opts.JsonSerializerOptions.PropertyNamingPolicy = new LowerCaseNamingPolicy();
                 });
@@ -37,6 +38,9 @@ public static class ServiceMappingExtension
                     opts.TokenValidationParameters = ConfigureValidationParameters(tokenKey);
                 });
 
+        builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+        builder.Services.AddProblemDetails();
+
         return builder;
     }
 
@@ -46,8 +50,8 @@ public static class ServiceMappingExtension
             .UseHttpsRedirection();
 
         app.UseAuthentication().UseAuthorization();
-
         app.MapControllers();
+        app.UseExceptionHandler();
 
         return app;
     }
@@ -60,7 +64,7 @@ public static class ServiceMappingExtension
             ValidateAudience = false,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey))
         };
-        
+
     private static string GetTokenKey(WebApplicationBuilder builder) =>
         builder.Configuration["TokenKey"] ?? throw new Exception("TokenKey property not configured");
 }
