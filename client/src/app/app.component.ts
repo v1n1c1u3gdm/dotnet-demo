@@ -1,9 +1,7 @@
-import { CommonModule, NgIf } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
-import { Component, Inject, inject, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Component, inject, OnInit } from '@angular/core';
 import { NavComponent } from "./nav/nav.component";
 import { AccountService } from './services/account.service';
-import { HomeComponent } from "./home/home.component";
 import { RouterOutlet } from '@angular/router';
 
 @Component({
@@ -19,7 +17,6 @@ export class AppComponent implements OnInit {
   protected _accountService = inject(AccountService);
 
   ngOnInit(): void {
-    //check user is loggedin, if its valid user and revalidate session
     this.setCurrentUser();
   }
 

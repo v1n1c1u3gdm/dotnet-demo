@@ -11,30 +11,20 @@ div.masthead .h1 {
   font-size: 2.25rem;
 }
 
-@media (min-width: 992px) {
-  div.masthead {
-    height: 100vh;
-    min-height: 40rem;
-    padding-top: 4.5rem;
-    padding-bottom: 0;
-  }
+div.masthead {
+  height: 100vh;
+  min-height: 40rem;
+  padding-top: 4.5rem;
 
-  div.masthead p {
-    font-size: 1.15rem;
-  }
-
-  div.masthead h1,
-  div.masthead .h1 {
-    font-size: 3rem;
-  }
 }
 
-@media (min-width: 1200px) {
+div.masthead p {
+  font-size: 1.15rem;
+}
 
-  div.masthead h1,
-  div.masthead .h1 {
-    font-size: 3.5rem;
-  }
+div.masthead h1,
+div.masthead .h1 {
+  font-size: 3rem;
 }
 
 .text-white-75 {
@@ -80,16 +70,6 @@ hr.divider {
   padding-left: 3rem !important;
 }
 
-.row {
-  --bs-gutter-x: 1.5rem;
-  --bs-gutter-y: 0;
-  display: flex;
-  flex-wrap: wrap;
-  margin-top: calc(-1 * var(--bs-gutter-y));
-  margin-right: calc(-0.5 * var(--bs-gutter-x));
-  margin-left: calc(-0.5 * var(--bs-gutter-x));
-}
-
 .row>* {
   flex-shrink: 0;
   width: 100%;
@@ -97,11 +77,6 @@ hr.divider {
   padding-right: calc(var(--bs-gutter-x) * 0.5);
   padding-left: calc(var(--bs-gutter-x) * 0.5);
   margin-top: var(--bs-gutter-y);
-}
-
-.col-2 {
-  flex: 0 0 auto;
-  width: 16.66666667%;
 }
 
 .paper {
