@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using System.Text.Json;
 using API.Data;
 using API.Interfaces;
 using API.Services;
@@ -23,7 +24,10 @@ public static class ServiceMappingExtension
                 .AddCors()
                 .AddDbContext<DataContext>(opt =>
                     opt.UseSqlite(builder.Configuration.GetConnectionString("Default"))
-                ).AddControllers();
+                ).AddControllers().AddJsonOptions(opts => {
+                    opts.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+                    opts.JsonSerializerOptions.PropertyNamingPolicy = new LowerCaseNamingPolicy();
+                });
 
         builder.Services
                 .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
