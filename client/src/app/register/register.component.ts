@@ -24,7 +24,7 @@ export class RegisterComponent {
         this._accountService.currentUser = apiUser;
         this._accountService.requestedUser.set(apiUser);
       },
-      error: e => this._toastr.error(e.error)
+      error: e => this._toastr.error(e.error, e.status)
     });
 
     this.cancel();

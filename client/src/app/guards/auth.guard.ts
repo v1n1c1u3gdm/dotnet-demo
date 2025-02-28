@@ -7,9 +7,10 @@ export const authGuard: CanActivateFn = (route, state) => {
   const accountService = inject(AccountService);
   const toastr = inject(ToastrService);
 
-  if(!accountService.isLoggedIn()){
-    toastr.error("Por favor identifique-se através de um login");
+  if (!accountService.isLoggedIn()) {
+    toastr.error("Por favor identifique-se através de credenciais válidas", "Autenticação negada");
     return false;
   }
+
   return true;
 };

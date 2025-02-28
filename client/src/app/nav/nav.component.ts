@@ -32,7 +32,7 @@ export class NavComponent {
           this._accountService.requestedUser.set(apiUser);
           this._router.navigateByUrl("/members");
         },
-        error: e => this._toastr.error(e.error)
+        error: e => this._toastr.error(e.error, e.status)
       });
     }
   }

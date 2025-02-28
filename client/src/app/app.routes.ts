@@ -7,6 +7,7 @@ import { WorkshopsComponent } from './workshops/workshops.component';
 import { BikesComponent } from './bikes/bikes.component';
 import { TravelPlanComponent } from './travel-plan/travel-plan.component';
 import { authGuard } from './guards/auth.guard';
+import { ServerComponent } from './error/server/server.component';
 
 export const routes: Routes = [
     { path: '', component: HomeComponent },
@@ -20,7 +21,8 @@ export const routes: Routes = [
             { path: 'messages', component: MessagesComponent },
             { path: 'workshops', component: WorkshopsComponent },
             { path: 'bikes', component: BikesComponent },
-            { path: 'travel-plan', component: TravelPlanComponent }
+            { path: 'travel-plan', component: TravelPlanComponent },
+            { path: 'unexpected', component: ServerComponent },
         ]
     },
     { path: '**', component: HomeComponent, pathMatch: "full" },
