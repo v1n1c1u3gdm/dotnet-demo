@@ -1,0 +1,51 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api-app
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      Database__Provider: mysql
+      Database__ConnectionString: Server=db;Port=3306;Database=ruby_demo_development;Uid=ruby-demo;Pwd=2u8y-c0d3;SslMode=Preferred;AllowPublicKeyRetrieval=True
+      VINICIUS_PUBLIC_KEY: "${VINICIUS_PUBLIC_KEY:-ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFakePublicKeyForViniciusSeedRecord}"
+    ports:
+      - "3000:8080"
+    volumes:
+      - ./api/logs:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
+
+  ui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: ui-app
+      args:
+        VUE_APP_API_BASE: http://localhost:3000
+    depends_on:
+      - api
+    ports:
+      - "8080:80"
+
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ruby_demo_development
+      MYSQL_USER: ruby-demo
+      MYSQL_PASSWORD: 2u8y-c0d3
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-proot"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
