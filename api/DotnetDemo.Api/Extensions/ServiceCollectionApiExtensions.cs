@@ -1,3 +1,4 @@
+using System.Text.Json;
 using DotnetDemo.Domain.Requests.Validators;
 using DotnetDemo.Services;
 using DotnetDemo.Tech;
@@ -12,7 +13,13 @@ public static class ServiceCollectionApiExtensions
 {
     public static IServiceCollection AddApiCore(this IServiceCollection services)
     {
-        services.AddControllers();
+        services.AddControllers()
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower;
+                options.JsonSerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.SnakeCaseLower;
+                options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+            });
 
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(options =>
