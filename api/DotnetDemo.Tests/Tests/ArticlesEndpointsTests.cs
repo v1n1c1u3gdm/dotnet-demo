@@ -41,6 +41,7 @@ public class ArticlesEndpointsTests : IntegrationTestBase
             authorId
         };
 
+        await AuthenticateClientAsync();
         var createResponse = await PostJsonAsync("/articles", request);
         createResponse.EnsureSuccessStatusCode();
         var created = await ReadAsAsync<ArticleResponse>(createResponse);

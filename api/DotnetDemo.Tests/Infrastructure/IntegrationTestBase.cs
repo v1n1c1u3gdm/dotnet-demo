@@ -1,5 +1,7 @@
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using DotnetDemo.Domain.Responses;
 
 namespace DotnetDemo.Tests.Infrastructure;
 
@@ -18,6 +20,9 @@ public abstract class IntegrationTestBase : IClassFixture<ApiWebApplicationFacto
     }
 
     protected HttpClient Client { get; }
+    private string? _cachedToken;
+    protected static string AdminUsername => ApiWebApplicationFactory.AdminSeedUsername;
+    protected static string AdminPassword => ApiWebApplicationFactory.AdminSeedPassword;
 
     protected Task<HttpResponseMessage> PostJsonAsync<T>(
         string requestUri,
@@ -36,5 +41,28 @@ public abstract class IntegrationTestBase : IClassFixture<ApiWebApplicationFacto
 
     protected static Task<T?> ReadAsAsync<T>(HttpResponseMessage response)
         => response.Content.ReadFromJsonAsync<T>(SnakeCaseJsonOptions);
+
+    protected async Task AuthenticateClientAsync(CancellationToken cancellationToken = default)
+    {
+        if (!string.IsNullOrWhiteSpace(_cachedToken))
+        {
+            Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _cachedToken);
+            return;
+        }
+
+        var loginRequest = new
+        {
+            username = AdminUsername,
+            password = AdminPassword
+        };
+
+        var response = await PostJsonAsync("/auth/login", loginRequest, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        var payload = await ReadAsAsync<AuthTokenResponse>(response)
+            ?? throw new InvalidOperationException("Auth login returned an empty payload.");
+
+        _cachedToken = payload.AccessToken;
+        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _cachedToken);
+    }
 }
 

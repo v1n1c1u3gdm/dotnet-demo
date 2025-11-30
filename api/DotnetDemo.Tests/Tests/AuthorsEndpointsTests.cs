@@ -40,6 +40,7 @@ public class AuthorsEndpointsTests : IntegrationTestBase
             bio = "Bio atualizada via teste."
         };
 
+        await AuthenticateClientAsync();
         var updateResponse = await PatchJsonAsync($"/authors/{authorId}", payload);
         updateResponse.EnsureSuccessStatusCode();
 

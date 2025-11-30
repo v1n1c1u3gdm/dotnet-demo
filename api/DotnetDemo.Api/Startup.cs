@@ -50,7 +50,7 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
-        services.AddApiCore();
+        services.AddApiCore(_configuration);
         services.AddDatabasePersistence(_configuration);
         services.AddObservability(_configuration);
     }
@@ -114,6 +114,7 @@ public class Startup
 
         app.UseRouting();
         app.UseCors("default");
+        app.UseAuthentication();
         app.UseAuthorization();
 
         app.MapControllers();

@@ -1,11 +1,13 @@
 using DotnetDemo.Domain.DTOs;
 using DotnetDemo.Domain.Requests;
 using DotnetDemo.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetDemo.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("articles")]
 public class ArticlesController : ControllerBase
 {
@@ -17,6 +19,7 @@ public class ArticlesController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<ActionResult<IEnumerable<ArticleDto>>> GetAll(CancellationToken cancellationToken)
     {
         var result = await _articleService.GetAllAsync(cancellationToken);
@@ -24,6 +27,7 @@ public class ArticlesController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [AllowAnonymous]
     public async Task<ActionResult<ArticleDto>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var article = await _articleService.GetByIdAsync(id, cancellationToken);
@@ -67,6 +71,7 @@ public class ArticlesController : ControllerBase
     }
 
     [HttpGet("count_by_author")]
+    [AllowAnonymous]
     public async Task<ActionResult<IEnumerable<ArticlesCountDto>>> CountByAuthor(CancellationToken cancellationToken)
     {
         var result = await _articleService.CountByAuthorAsync(cancellationToken);

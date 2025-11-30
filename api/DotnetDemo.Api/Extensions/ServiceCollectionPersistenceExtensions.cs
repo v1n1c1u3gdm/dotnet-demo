@@ -22,6 +22,10 @@ public static class ServiceCollectionPersistenceExtensions
             .AddOptions<SeedOptions>()
             .Bind(configuration.GetSection(SeedOptions.SectionName));
 
+        services
+            .AddOptions<SeedAdminOptions>()
+            .Bind(configuration.GetSection(SeedAdminOptions.SectionName));
+
         services.AddSingleton<NHibernateSessionFactoryBuilder>();
         services.AddSingleton(provider =>
         {

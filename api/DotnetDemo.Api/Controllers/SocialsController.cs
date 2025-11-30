@@ -1,11 +1,13 @@
 using DotnetDemo.Domain.DTOs;
 using DotnetDemo.Domain.Requests;
 using DotnetDemo.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetDemo.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("socials")]
 public class SocialsController : ControllerBase
 {
@@ -17,6 +19,7 @@ public class SocialsController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<ActionResult<IEnumerable<SocialDto>>> GetAll(CancellationToken cancellationToken)
     {
         var socials = await _socialService.GetAllAsync(cancellationToken);
@@ -24,6 +27,7 @@ public class SocialsController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [AllowAnonymous]
     public async Task<ActionResult<SocialDto>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var social = await _socialService.GetByIdAsync(id, cancellationToken);

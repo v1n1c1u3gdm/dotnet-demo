@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text.Json;
 using DotnetDemo.Domain.Entities;
+using DotnetDemo.Security;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -22,17 +23,23 @@ public class DataSeeder
     private readonly SeedOptions _seedOptions;
     private readonly IWebHostEnvironment _environment;
     private readonly ILogger<DataSeeder> _logger;
+    private readonly SeedAdminOptions _seedAdminOptions;
+    private readonly IPasswordHasher _passwordHasher;
 
     public DataSeeder(
         ISessionFactory sessionFactory,
         IOptions<SeedOptions> seedOptions,
+        IOptions<SeedAdminOptions> seedAdminOptions,
         IWebHostEnvironment environment,
-        ILogger<DataSeeder> logger)
+        ILogger<DataSeeder> logger,
+        IPasswordHasher passwordHasher)
     {
         _sessionFactory = sessionFactory;
         _seedOptions = seedOptions.Value;
+        _seedAdminOptions = seedAdminOptions.Value;
         _environment = environment;
         _logger = logger;
+        _passwordHasher = passwordHasher;
     }
 
     public async Task SeedAsync(CancellationToken cancellationToken = default)
@@ -43,6 +50,7 @@ public class DataSeeder
         var author = await UpsertAuthorAsync(session, cancellationToken);
         await UpsertSocialsAsync(session, author, cancellationToken);
         await UpsertArticlesAsync(session, author, cancellationToken);
+        await UpsertAdminUserAsync(session, cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
         session.Clear();
@@ -252,6 +260,38 @@ public class DataSeeder
         }
 
         return string.Join("\n", lines);
+    }
+
+    private async Task UpsertAdminUserAsync(ISession session, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(_seedAdminOptions.Username) || string.IsNullOrWhiteSpace(_seedAdminOptions.Password))
+        {
+            _logger.LogWarning("Admin user seed skipped: missing username or password");
+            return;
+        }
+
+        var normalizedUsername = _seedAdminOptions.Username.Trim().ToLowerInvariant();
+        var adminUser = await session.Query<AdminUser>()
+            .FirstOrDefaultAsync(u => u.Username == normalizedUsername, cancellationToken)
+            ?? new AdminUser { Username = normalizedUsername };
+
+        if (adminUser.Id == Guid.Empty)
+        {
+            adminUser.CreatedAt = DateTime.UtcNow;
+        }
+
+        adminUser.DisplayName = string.IsNullOrWhiteSpace(_seedAdminOptions.DisplayName)
+            ? "Administrador"
+            : _seedAdminOptions.DisplayName.Trim();
+
+        var hash = _passwordHasher.HashPassword(_seedAdminOptions.Password, _seedAdminOptions.HashIterations);
+        adminUser.PasswordHash = hash.Hash;
+        adminUser.PasswordSalt = hash.Salt;
+        adminUser.PasswordHashIterations = _seedAdminOptions.HashIterations;
+        adminUser.UpdatedAt = DateTime.UtcNow;
+
+        await session.SaveOrUpdateAsync(adminUser, cancellationToken);
+        _logger.LogInformation("Seeded admin user {Username}", adminUser.Username);
     }
 }
 

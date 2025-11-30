@@ -11,6 +11,10 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
 {
     private readonly string _databasePath;
     private readonly string _logsPath;
+    public const string AdminSeedUsername = "test-admin";
+    public const string AdminSeedPassword = "test-password";
+    public const string AdminSeedDisplayName = "Test Administrator";
+    public const string JwtSecret = "integration-tests-secret-key-change-me";
 
     public ApiWebApplicationFactory()
     {
@@ -28,7 +32,15 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
             {
                 ["Database:Provider"] = "sqlite",
                 ["Database:ConnectionString"] = $"Data Source={_databasePath};Cache=Shared;Foreign Keys=True",
-                ["Logging:Directory"] = _logsPath
+                ["Logging:Directory"] = _logsPath,
+                ["Seeds:AdminUser:Username"] = AdminSeedUsername,
+                ["Seeds:AdminUser:Password"] = AdminSeedPassword,
+                ["Seeds:AdminUser:DisplayName"] = AdminSeedDisplayName,
+                ["Seeds:AdminUser:HashIterations"] = "80000",
+                ["Jwt:Issuer"] = "dotnet-demo-tests",
+                ["Jwt:Audience"] = "dotnet-demo-tests-clients",
+                ["Jwt:SecretKey"] = JwtSecret,
+                ["Jwt:AccessTokenMinutes"] = "30"
             };
 
             configBuilder.AddInMemoryCollection(overrides!);

@@ -1,11 +1,13 @@
 using DotnetDemo.Domain.DTOs;
 using DotnetDemo.Domain.Requests;
 using DotnetDemo.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetDemo.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("authors")]
 public class AuthorsController : ControllerBase
 {
@@ -17,6 +19,7 @@ public class AuthorsController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<ActionResult<IEnumerable<AuthorDto>>> GetAll(CancellationToken cancellationToken)
     {
         var result = await _authorService.GetAllAsync(cancellationToken);
@@ -24,6 +27,7 @@ public class AuthorsController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [AllowAnonymous]
     public async Task<ActionResult<AuthorDto>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var author = await _authorService.GetByIdAsync(id, cancellationToken);
