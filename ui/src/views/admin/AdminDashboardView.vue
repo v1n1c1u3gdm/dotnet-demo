@@ -5,6 +5,10 @@
         <span v-if="isLoading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
         Atualizar
       </button>
+      <button type="button" class="admin-button admin-button--primary" @click="openCreateModal">
+        <i class="fas fa-plus me-1"></i>
+        Novo
+      </button>
     </template>
 
     <div class="admin-dashboard">
@@ -74,13 +78,25 @@
                   </td>
                   <td>{{ article.published_label || '—' }}</td>
                   <td>{{ formatDate(article.updated_at) }}</td>
-                  <td class="text-end">
-                    <button type="button" class="btn btn-link btn-sm p-0 me-3" @click="openEditModal(article)">
-                      Editar
-                    </button>
-                    <button type="button" class="btn btn-link btn-sm text-danger p-0" @click="openDeleteModal(article)">
-                      Apagar
-                    </button>
+                  <td class="text-end admin-table__actions">
+                    <a
+                      href="#"
+                      class="admin-icon-link"
+                      aria-label="Editar artigo"
+                      title="Editar artigo"
+                      @click.prevent="openEditModal(article)"
+                    >
+                      <i class="fas fa-pen"></i>
+                    </a>
+                    <a
+                      href="#"
+                      class="admin-icon-link admin-icon-link--danger"
+                      aria-label="Remover artigo"
+                      title="Remover artigo"
+                      @click.prevent="openDeleteModal(article)"
+                    >
+                      <i class="fas fa-trash"></i>
+                    </a>
                   </td>
                 </tr>
               </tbody>
@@ -90,14 +106,24 @@
       </div>
     </div>
 
-    <b-modal v-model="isEditModalVisible" title="Editar artigo" hide-footer size="lg" @hidden="resetEditForm">
+    <b-modal
+      v-model="isEditModalVisible"
+      :title="modalTitle"
+      hide-footer
+      size="lg"
+      @hidden="resetEditForm"
+    >
       <b-form @submit.prevent="saveArticle">
         <b-form-group label="Título" label-for="article-title">
           <b-form-input id="article-title" v-model="editForm.title" required />
         </b-form-group>
 
         <b-form-group label="Slug" label-for="article-slug" class="mt-3">
-          <b-form-input id="article-slug" v-model="editForm.slug" required />
+          <b-form-input
+            id="article-slug"
+            v-model="editForm.slug"
+            placeholder="Deixe em branco para gerar automaticamente"
+          />
         </b-form-group>
 
         <b-form-group label="Rótulo publicado" label-for="article-published" class="mt-3">
@@ -106,6 +132,10 @@
 
         <b-form-group label="Autor" label-for="article-author" class="mt-3">
           <b-form-select id="article-author" v-model="editForm.authorId" :options="authorOptions" required />
+        </b-form-group>
+
+        <b-form-group label="Conteúdo" class="mt-3">
+          <textarea ref="postEditor" />
         </b-form-group>
 
         <div class="d-flex justify-content-end mt-4">
@@ -141,12 +171,19 @@
 
 <script>
 import AdminLayout from '@/components/AdminLayout.vue'
-import { fetchAdminArticles, updateAdminArticle, deleteAdminArticle } from '@/services/adminArticlesService'
+import {
+  fetchAdminArticles,
+  updateAdminArticle,
+  deleteAdminArticle,
+  createAdminArticle
+} from '@/services/adminArticlesService'
 import { fetchAuthors } from '@/services/authorsService'
 import { logout } from '@/services/authService'
 import $ from 'jquery'
 import 'datatables.net-bs4'
 import 'datatables.net-bs4/css/dataTables.bootstrap4.min.css'
+import 'summernote/dist/summernote-bs4.css'
+import 'summernote/dist/summernote-bs4.js'
 
 if (typeof window !== 'undefined' && !window.jQuery) {
   window.jQuery = $
@@ -177,7 +214,8 @@ export default {
         authorId: null
       },
       dtInstance: null,
-      successTimer: null
+      successTimer: null,
+      isCreateMode: false
     }
   },
   computed: {
@@ -193,6 +231,9 @@ export default {
         value: author.id,
         text: author.name
       }))
+    },
+    modalTitle() {
+      return this.isCreateMode ? 'Novo artigo' : 'Editar artigo'
     }
   },
   async mounted() {
@@ -204,6 +245,7 @@ export default {
     if (this.successTimer) {
       clearTimeout(this.successTimer)
     }
+    this.destroyEditor()
   },
   methods: {
     async loadAuthors() {
@@ -262,6 +304,7 @@ export default {
       }
     },
     openEditModal(article) {
+      this.isCreateMode = false
       this.selectedArticle = { ...article }
       this.editForm = {
         title: article.title,
@@ -270,9 +313,24 @@ export default {
         authorId: article.author_id
       }
       this.isEditModalVisible = true
+      this.$nextTick(() => this.initializeEditor(article.post_entry || ''))
+    },
+    openCreateModal() {
+      this.isCreateMode = true
+      this.selectedArticle = null
+      this.editForm = {
+        title: '',
+        slug: '',
+        publishedLabel: '',
+        authorId: this.authors[0]?.id || null
+      }
+      this.isEditModalVisible = true
+      this.$nextTick(() => this.initializeEditor(''))
     },
     resetEditForm() {
+      this.destroyEditor()
       this.selectedArticle = null
+      this.isCreateMode = false
       this.editForm = {
         title: '',
         slug: '',
@@ -281,22 +339,30 @@ export default {
       }
     },
     async saveArticle() {
-      if (!this.selectedArticle) return
       this.isSaving = true
       this.errorMessage = null
       try {
+        const postEntry = this.getEditorContent()
         const payload = {
           title: this.editForm.title,
           slug: this.editForm.slug,
           published_label: this.editForm.publishedLabel,
-          post_entry: this.selectedArticle.post_entry || '',
-          tags: this.selectedArticle.tags || [],
+          post_entry: postEntry,
+          tags: this.selectedArticle?.tags || [],
           author_id: this.editForm.authorId
         }
-        const updated = await updateAdminArticle(this.selectedArticle.id, payload)
-        this.articles = this.articles.map(article => (article.id === updated.id ? updated : article))
+
+        if (this.isCreateMode) {
+          const created = await createAdminArticle(payload)
+          this.articles = [created, ...this.articles]
+          this.notifySuccess('Artigo criado com sucesso.')
+        } else if (this.selectedArticle) {
+          const updated = await updateAdminArticle(this.selectedArticle.id, payload)
+          this.articles = this.articles.map(article => (article.id === updated.id ? updated : article))
+          this.notifySuccess('Artigo atualizado com sucesso.')
+        }
+
         this.isEditModalVisible = false
-        this.notifySuccess('Artigo atualizado com sucesso.')
         this.$nextTick(() => this.setupDataTable())
       } catch (error) {
         this.errorMessage = error.message || 'Não foi possível salvar as alterações.'
@@ -348,6 +414,42 @@ export default {
     handleLogout() {
       logout()
       this.$router.push({ name: 'admin-login' })
+    },
+    initializeEditor(content) {
+      const editor = this.$refs.postEditor
+      if (!editor) return
+      const $editor = $(editor)
+      if ($editor.data('summernote')) {
+        $editor.summernote('destroy')
+      }
+      $editor.summernote({
+        height: 280,
+        placeholder: 'Conteúdo do artigo...',
+        toolbar: [
+          ['style', ['bold', 'italic', 'underline', 'clear']],
+          ['para', ['ul', 'ol', 'paragraph']],
+          ['insert', ['link']],
+          ['view', ['fullscreen', 'codeview']]
+        ]
+      })
+      $editor.summernote('code', content || '')
+    },
+    destroyEditor() {
+      const editor = this.$refs.postEditor
+      if (!editor) return
+      const $editor = $(editor)
+      if ($editor.data('summernote')) {
+        $editor.summernote('destroy')
+      }
+    },
+    getEditorContent() {
+      const editor = this.$refs.postEditor
+      if (!editor) return ''
+      const $editor = $(editor)
+      if ($editor.data('summernote')) {
+        return $editor.summernote('code')
+      }
+      return ''
     }
   }
 }
@@ -402,8 +504,60 @@ export default {
   flex-wrap: wrap;
 }
 
+.admin-button--primary {
+  background: var(--dark);
+  color: #fff;
+  border: none;
+}
+
 .admin-table__title {
   font-weight: 600;
+}
+
+.admin-table__actions {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 96px;
+  white-space: nowrap;
+  height: 100%;
+}
+
+.admin-table__actions::before {
+  content: '';
+  display: inline-block;
+  height: 100%;
+}
+
+.admin-icon-link {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid rgba(12, 19, 38, 0.15);
+  background: #fff;
+  color: var(--dark);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.admin-icon-link:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(12, 19, 38, 0.1);
+}
+
+.admin-icon-link--danger {
+  border-color: rgba(229, 57, 53, 0.3);
+  color: #e53935;
+}
+
+.admin-icon-link--danger:hover {
+  box-shadow: 0 10px 20px rgba(229, 57, 53, 0.25);
 }
 
 .admin-overlay {

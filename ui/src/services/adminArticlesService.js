@@ -108,6 +108,13 @@ export function fetchAdminArticles() {
   return request('/articles')
 }
 
+export function createAdminArticle(payload) {
+  return request(`/articles`, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+}
+
 export function updateAdminArticle(id, payload) {
   return request(`/articles/${id}`, {
     method: 'PATCH',

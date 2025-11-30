@@ -1,5 +1,5 @@
 <template>
-  <SiteLayout>
+  <SiteLayout :disable-main-left="true" :full-width-top="true">
     <template #main-left>
       <div class="admin-hero">
         <p class="admin-eyebrow">/admin</p>

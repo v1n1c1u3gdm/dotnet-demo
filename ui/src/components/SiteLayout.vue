@@ -30,7 +30,7 @@
     </nav>
 
     <div class="content">
-      <header class="top">
+      <header :class="['top', { 'top--full': fullWidthTop }]">
         <div class="top__item"></div>
         <div class="top__item top__item--right">
           <button
@@ -49,11 +49,11 @@
       </header>
 
       <main class="main">
-        <section class="main__left">
+        <section v-if="!disableMainLeft" class="main__left">
           <slot name="main-left" />
         </section>
 
-        <section class="main__right">
+        <section :class="['main__right', { 'main__right--full': disableMainLeft }]">
           <div class="main__right-inner">
             <slot name="main-right" />
 
@@ -77,6 +77,16 @@ export default {
   name: 'SiteLayout',
   components: {
     SocialsView
+  },
+  props: {
+    fullWidthTop: {
+      type: Boolean,
+      default: false
+    },
+    disableMainLeft: {
+      type: Boolean,
+      default: false
+    }
   },
   data() {
     return {
@@ -296,6 +306,10 @@ export default {
   color: var(--text-color);
 }
 
+.main__right--full {
+  margin-left: 0 !important;
+}
+
 .main__right-inner {
   width: 100%;
   max-width: none;
@@ -381,6 +395,13 @@ export default {
     color: var(--dark);
   }
 
+  .top--full {
+    width: 100%;
+    left: 0;
+    right: 0;
+    padding: 1.5rem 4%;
+  }
+
   .logo {
     color: var(--dark);
   }
@@ -408,6 +429,10 @@ export default {
     padding: calc(var(--navbar-height) + 3.75rem) 6% 3rem;
     height: 100vh;
     overflow-y: auto;
+  }
+
+  .main__right--full {
+    margin-left: 0;
   }
 }
 </style>

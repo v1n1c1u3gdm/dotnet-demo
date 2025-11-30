@@ -2,6 +2,7 @@ using System.Linq;
 using DotnetDemo.Domain.DTOs;
 using DotnetDemo.Domain.Entities;
 using DotnetDemo.Domain.Requests;
+using DotnetDemo.Domain.Utils;
 using ISession = NHibernate.ISession;
 using NHibernate.Linq;
 
@@ -40,10 +41,20 @@ public class ArticleService : IArticleService
         var author = await _session.GetAsync<Author>(request.AuthorId, cancellationToken)
             ?? throw new ArgumentException("Author not found", nameof(request.AuthorId));
 
+        var slug = request.Slug;
+        if (string.IsNullOrWhiteSpace(slug))
+        {
+            slug = await GenerateUniqueSlugAsync(SlugGenerator.Generate(request.Title), cancellationToken);
+        }
+        else
+        {
+            slug = await GenerateUniqueSlugAsync(slug.Trim().ToLowerInvariant(), cancellationToken);
+        }
+
         var article = new Article
         {
             Title = request.Title,
-            Slug = request.Slug,
+            Slug = slug,
             PublishedLabel = request.PublishedLabel,
             PostEntry = request.PostEntry,
             Tags = request.Tags ?? new List<string>(),
@@ -69,7 +80,6 @@ public class ArticleService : IArticleService
         }
 
         article.Title = request.Title;
-        article.Slug = request.Slug;
         article.PublishedLabel = request.PublishedLabel;
         article.PostEntry = request.PostEntry;
         article.Tags = request.Tags ?? new List<string>();
@@ -81,6 +91,15 @@ public class ArticleService : IArticleService
                 ?? throw new ArgumentException("Author not found", nameof(request.AuthorId));
             article.Author = author;
             article.AuthorId = author.Id;
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Slug))
+        {
+            var incomingSlug = request.Slug.Trim().ToLowerInvariant();
+            if (!string.Equals(incomingSlug, article.Slug, StringComparison.OrdinalIgnoreCase))
+            {
+                article.Slug = await GenerateUniqueSlugAsync(incomingSlug, cancellationToken, article.Id);
+            }
         }
 
         await _session.UpdateAsync(article, cancellationToken);
@@ -121,5 +140,36 @@ public class ArticleService : IArticleService
             })
             .ToList();
     }
+
+    private async Task<string> GenerateUniqueSlugAsync(string baseSlug, CancellationToken cancellationToken, Guid? excludeId = null)
+    {
+        var slug = string.IsNullOrWhiteSpace(baseSlug)
+            ? SlugGenerator.Generate(Guid.NewGuid().ToString("N"))
+            : SlugGenerator.Generate(baseSlug);
+
+        var suffix = 1;
+        var candidate = slug;
+
+        while (await SlugExistsAsync(candidate, cancellationToken, excludeId))
+        {
+            suffix++;
+            candidate = $"{slug}-{suffix}";
+        }
+
+        return candidate;
+    }
+
+    private Task<bool> SlugExistsAsync(string slug, CancellationToken cancellationToken, Guid? excludeId = null)
+    {
+        var query = _session.Query<Article>().Where(article => article.Slug == slug);
+        if (excludeId.HasValue)
+        {
+            var value = excludeId.Value;
+            query = query.Where(article => article.Id != value);
+        }
+
+        return query.AnyAsync(cancellationToken);
+    }
+
 }
 
