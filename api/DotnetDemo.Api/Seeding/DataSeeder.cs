@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.Json;
 using DotnetDemo.Domain.Entities;
@@ -14,6 +16,7 @@ public class DataSeeder
 {
     private const string DefaultPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFakePublicKeyForViniciusSeedRecord";
     private static readonly TimeZoneInfo SaoPaulo = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+    private static readonly CultureInfo PtBrCulture = CultureInfo.GetCultureInfo("pt-BR");
 
     private readonly ISessionFactory _sessionFactory;
     private readonly SeedOptions _seedOptions;
@@ -128,11 +131,16 @@ public class DataSeeder
 
             article.Title = record.Title;
             article.PublishedLabel = record.PublishedLabel;
-            article.PostEntry = record.PostEntry;
-            article.Tags = record.Tags ?? new List<string>();
+            var normalizedTags = record.Tags ?? new List<string>();
+            article.Tags = normalizedTags;
+            article.PostEntry = NormalizePostEntry(record.PostEntry, normalizedTags);
             article.Author = author;
             article.AuthorId = author.Id;
-            article.CreatedAt = article.Id == Guid.Empty ? generatedAt : article.CreatedAt;
+            var publishedAtUtc = TryParsePublishedAt(record.PublishedLabel, generatedAt);
+            if (article.Id == Guid.Empty)
+            {
+                article.CreatedAt = publishedAtUtc;
+            }
             article.UpdatedAt = DateTime.UtcNow;
 
             await session.SaveOrUpdateAsync(article, cancellationToken);
@@ -173,6 +181,77 @@ public class DataSeeder
         }
 
         return null;
+    }
+
+    private static DateTime TryParsePublishedAt(string? publishedLabel, DateTime fallbackUtc)
+    {
+        if (string.IsNullOrWhiteSpace(publishedLabel))
+        {
+            return fallbackUtc;
+        }
+
+        if (DateTime.TryParse(publishedLabel, PtBrCulture, DateTimeStyles.AssumeUniversal, out var parsed))
+        {
+            if (parsed.Kind == DateTimeKind.Unspecified)
+            {
+                parsed = TimeZoneInfo.ConvertTimeToUtc(parsed, SaoPaulo);
+            }
+
+            return parsed.ToUniversalTime();
+        }
+
+        return fallbackUtc;
+    }
+
+    private static string NormalizePostEntry(string? postEntry, IReadOnlyCollection<string>? tags)
+    {
+        if (string.IsNullOrWhiteSpace(postEntry))
+        {
+            return string.Empty;
+        }
+
+        if (tags is null || tags.Count == 0)
+        {
+            return postEntry;
+        }
+
+        var tagSet = new HashSet<string>(tags.Where(t => !string.IsNullOrWhiteSpace(t)).Select(t => t.Trim()), StringComparer.OrdinalIgnoreCase);
+        if (tagSet.Count == 0)
+        {
+            return postEntry;
+        }
+
+        var lines = postEntry
+            .Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Split('\n')
+            .ToList();
+
+        var index = lines.Count - 1;
+        while (index >= 0)
+        {
+            var current = lines[index].Trim();
+            if (string.IsNullOrEmpty(current))
+            {
+                index--;
+                continue;
+            }
+
+            if (!tagSet.Contains(current))
+            {
+                break;
+            }
+
+            lines.RemoveAt(index);
+            index--;
+
+            while (index >= 0 && string.IsNullOrWhiteSpace(lines[index]))
+            {
+                lines.RemoveAt(index);
+                index--;
+            }
+        }
+
+        return string.Join("\n", lines);
     }
 }
 
