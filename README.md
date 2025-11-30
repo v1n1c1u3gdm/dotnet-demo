@@ -1,14 +1,14 @@
 # .NET Demo (ASP.NET Core + NHibernate)
 
-Repositório reescrito com **ASP.NET Core 10** sobre Kestrel, NHibernate e MySQL containerizado. A raiz continua dividida em dois módulos:
+Repositório reescrito com **ASP.NET Core 9** sobre Kestrel, NHibernate e MySQL containerizado. O objetivo é reconstruir o blog gerado via Publii, evoluindo-o para um CMS de alta performance e totalmente observável. A raiz continua dividida em dois módulos:
 
 - `api/` – solução .NET com `DotnetDemo.Api` (Web API) e `DotnetDemo.Tests` (xUnit + WebApplicationFactory).
-- `ui/` – front-end Vue 2 + BootstrapVue, consumindo os mesmos endpoints e com suíte Jest ≥85% de cobertura.
+- `ui/` – front-end Vue 2 + BootstrapVue, consumindo os mesmos endpoints (a mesma estrutura do blog Publii original), agora servindo também como base para o painel administrativo do futuro CMS.
 
 ## Arquitetura & Tecnologias
 
 - **API (`api/`)**:
-  - ASP.NET Core (Kestrel) + `Startup.cs` tradicional que executa FluentMigrator + seeding logo no boot.
+  - ASP.NET Core 9 (Kestrel) + `Startup.cs` tradicional que executa FluentMigrator + seeding logo no boot.
   - NHibernate + FluentNHibernate mappings para `Author`, `Article` e `Social`, com `StringListJsonType` para o campo `tags`.
   - Migrations FluentMigrator equivalentes às do projeto Ruby (criação das tabelas e remoção de `url`), rodando automaticamente.
   - Seeds idempotentes lendo o mesmo dataset (`Seeds/article_seed_data.json`) e respeitando `VINICIUS_PUBLIC_KEY`.
@@ -82,7 +82,7 @@ dotnet run --project DotnetDemo.Api
 
 ## Testes automatizados
 
-- **API**: `cd api && dotnet test` – utiliza WebApplicationFactory com SQLite on-disk (`Data Source=...db`) + migrations + seeds reais. Cobre CRUD, `/count_by_author`, `/up`, `/metrics` e `/tech`.
+- **API**: `cd api && dotnet test` – utiliza WebApplicationFactory com SQLite on-disk (`Data Source=...db`) + migrations + seeds reais. Cobre CRUD, `/count_by_author`, `/up`, `/metrics` e `/tech`, garantindo que a plataforma continue evoluindo como CMS de alta performance.
 - **UI**: `cd ui && npm install && npm run test:unit`.
 
 ## UI (Vue + BootstrapVue)
@@ -94,4 +94,17 @@ npm run serve        # http://localhost:8080 (envs VUE_APP_* apontam para http:/
 npm run build        # gera dist/ usada pelo estágio NGINX
 ```
 
-Os services (`articlesService`, `authorsService`, `socialsService`) continuam exatamente iguais ao projeto Ruby – os endpoints e payloads permanecem compatíveis.*** End Patch
+Os services (`articlesService`, `authorsService`, `socialsService`) continuam exatamente iguais ao projeto Ruby – os endpoints e payloads permanecem compatíveis.
+
+## Área administrativa (/admin)
+
+- Login JWT dedicado em `http://localhost:8080/admin/login`, inspirado no layout Bootstrap Dashboard, mas reaproveitando o `SiteLayout`.
+- **Credenciais seed:**
+  - Docker/produção (`ASPNETCORE_ENVIRONMENT=Production`): `admin` / `change-me-please`
+  - Desenvolvimento (`ASPNETCORE_ENVIRONMENT=Development`): `admin` / `change-me-in-dev`
+- Funcionalidades principais:
+  - Listagem com DataTable local (paginação, busca e ordenação) + ações por ícones.
+  - Botão “Novo” para abrir o mesmo formulário em modo criação.
+  - Editor Summernote (servido/localmente) para o campo de conteúdo, sem dependência de CDN.
+  - Slug pode ser informado manualmente; se deixado em branco, é gerado automaticamente no backend com verificação de unicidade.
+- Para personalizar as credenciais seed, ajuste `Seeds:AdminUser` no `appsettings*.json` antes de subir a API.
