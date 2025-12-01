@@ -19,16 +19,93 @@ Repositório reescrito com **ASP.NET Core 9** sobre Kestrel, NHibernate e MySQL 
 - **Banco (`db/`)**: MySQL 8.4 em container dedicado com volume `mysql_data` e credenciais fixas (`ruby-demo` / `2u8y-c0d3`).
 - **Orquestração**: `docker-compose.yml` agora referencia o `Dockerfile` oficial da Microsoft (sample `aspnetapp`), publica a API em `:3000` (container `8080`) e monta o diretório de logs.
 
-## Stack
+## Tecnologias
 
-- .NET SDK 9 localmente (o container já usa `mcr.microsoft.com/dotnet/sdk:10.0`/`aspnet:10.0`).
-- ASP.NET Core + Kestrel + Swagger/Swashbuckle.
-- NHibernate + FluentNHibernate + FluentMigrator.
-- Serilog (console + file) com interceptador de SQL.
-- OpenTelemetry Metrics + Prometheus scraping endpoint.
-- xUnit + FluentAssertions + WebApplicationFactory + SQLite para integração.
-- Vue 2, BootstrapVue, Jest, Vue Test Utils.
-- Docker 24 + Docker Compose v2.
+### Back-end (API)
+
+#### Framework & Runtime
+- **ASP.NET Core 9** – Framework web moderno e de alta performance
+- **Kestrel** – Servidor web cross-platform integrado
+- **.NET SDK 9** – SDK para desenvolvimento local
+
+#### ORM & Banco de Dados
+- **NHibernate 5.5.1** – ORM robusto e maduro
+- **FluentNHibernate 3.3.0** – Mapeamento fluente para NHibernate
+- **FluentMigrator 6.0.0** – Migrations versionadas e automatizadas
+- **MySqlConnector 2.5.0** – Driver MySQL de alta performance
+- **MySql.Data 9.0.0** – Driver MySQL oficial
+- **Microsoft.Data.Sqlite 9.0.0** – SQLite para testes de integração
+
+#### Autenticação & Segurança
+- **Microsoft.AspNetCore.Authentication.JwtBearer 9.0.0** – Autenticação JWT para API
+
+#### Documentação & Validação
+- **Swashbuckle.AspNetCore 6.6.2** – Geração automática de documentação Swagger/OpenAPI
+- **Microsoft.AspNetCore.OpenApi 9.0.11** – Suporte OpenAPI
+- **FluentValidation.AspNetCore 11.3.1** – Validação fluente de modelos
+
+#### Observabilidade & Logging
+- **Serilog.AspNetCore 8.0.1** – Framework de logging estruturado
+- **Serilog.Sinks.Console 6.0.0** – Sink para console
+- **Serilog.Sinks.File 5.0.0** – Sink para arquivos
+- **Serilog.Settings.Configuration 8.0.0** – Configuração via appsettings.json
+- **OpenTelemetry.Extensions.Hosting 1.9.0** – Extensões OpenTelemetry
+- **OpenTelemetry.Instrumentation.AspNetCore 1.9.0** – Instrumentação ASP.NET Core
+- **OpenTelemetry.Instrumentation.Http 1.9.0** – Instrumentação HTTP
+- **OpenTelemetry.Instrumentation.Runtime 1.9.0** – Instrumentação de runtime
+- **OpenTelemetry.Exporter.Prometheus.AspNetCore 1.11.0-beta.1** – Exportador Prometheus
+
+#### Testes
+- **xUnit 2.9.2** – Framework de testes
+- **FluentAssertions 6.12.2** – Assertions legíveis e expressivas
+- **Microsoft.AspNetCore.Mvc.Testing 9.0.0** – Testes de integração com WebApplicationFactory
+- **coverlet.collector 6.0.2** – Coleta de cobertura de código
+
+### Front-end (UI)
+
+#### Framework & Core
+- **Vue.js 2.6.14** – Framework JavaScript progressivo
+- **Vue Router 3.6.5** – Roteamento oficial do Vue.js
+- **core-js 3.8.3** – Polyfills para compatibilidade
+
+#### UI & Estilização
+- **Bootstrap 4.6.2** – Framework CSS responsivo
+- **BootstrapVue 2.23.1** – Componentes Vue baseados em Bootstrap
+- **@fontsource/ubuntu 5.2.8** – Fonte Ubuntu self-hosted
+- **@fortawesome/fontawesome-free 7.1.0** – Ícones Font Awesome
+
+#### Bibliotecas de Terceiros
+- **jQuery 3.7.1** – Biblioteca JavaScript (requerida por DataTables e Summernote)
+- **DataTables.net 1.13.8** – Tabelas interativas com paginação, busca e ordenação
+- **datatables.net-bs4 1.13.8** – Integração DataTables com Bootstrap 4
+- **Summernote 0.9.1** – Editor WYSIWYG para conteúdo rico
+
+#### Ferramentas de Desenvolvimento
+- **Vue CLI 5.0.0** – Ferramentas de linha de comando para Vue.js
+- **@vue/cli-service 5.0.0** – Serviços de build e desenvolvimento
+- **@vue/cli-plugin-babel 5.0.0** – Plugin Babel para transpilação
+- **@vue/cli-plugin-eslint 5.0.0** – Plugin ESLint para linting
+- **@vue/cli-plugin-unit-jest 5.0.0** – Plugin Jest para testes unitários
+- **@babel/core 7.12.16** – Compilador JavaScript
+- **@babel/eslint-parser 7.12.16** – Parser Babel para ESLint
+- **eslint 7.32.0** – Linter JavaScript
+- **eslint-plugin-vue 8.0.3** – Plugin ESLint para Vue.js
+
+#### Testes
+- **Jest** (via @vue/cli-plugin-unit-jest) – Framework de testes JavaScript
+- **@vue/test-utils 1.3.4** – Utilitários para testes de componentes Vue
+- **@vue/vue2-jest 27.0.0** – Transformador Jest para Vue 2
+- **babel-jest 27.5.1** – Transformador Babel para Jest
+- **jest-environment-jsdom 27.5.1** – Ambiente DOM para Jest
+- **vue-template-compiler 2.6.14** – Compilador de templates Vue
+- **flush-promises 1.0.2** – Utilitário para testes assíncronos
+
+### Infraestrutura & DevOps
+
+- **Docker 24+** – Containerização
+- **Docker Compose v2** – Orquestração de containers
+- **MySQL 8.4** – Banco de dados relacional
+- **NGINX** – Servidor web para servir o front-end em produção
 
 ## Endpoints principais
 

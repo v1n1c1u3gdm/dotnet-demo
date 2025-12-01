@@ -1,10 +1,6 @@
 <template>
   <AdminLayout title="Painel de artigos" subtitle="Visualize e mantenha os artigos publicados no site." @logout="handleLogout">
     <template #toolbar>
-      <button type="button" class="admin-button" :disabled="isLoading" @click="refreshArticles">
-        <span v-if="isLoading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-        Atualizar
-      </button>
       <button type="button" class="admin-button admin-button--primary" @click="openCreateModal">
         <i class="fas fa-plus me-1"></i>
         Novo
@@ -32,11 +28,6 @@
           <div>
             <h3>Lista de artigos</h3>
             <p>Datatable local com paginação, busca e ações rápidas.</p>
-          </div>
-          <div>
-            <button type="button" class="admin-button admin-button--ghost" @click="refreshArticles" :disabled="isLoading">
-              Recarregar
-            </button>
           </div>
         </div>
 
@@ -79,24 +70,26 @@
                   <td>{{ article.published_label || '—' }}</td>
                   <td>{{ formatDate(article.updated_at) }}</td>
                   <td class="text-end admin-table__actions">
-                    <a
-                      href="#"
-                      class="admin-icon-link"
-                      aria-label="Editar artigo"
-                      title="Editar artigo"
-                      @click.prevent="openEditModal(article)"
-                    >
-                      <i class="fas fa-pen"></i>
-                    </a>
-                    <a
-                      href="#"
-                      class="admin-icon-link admin-icon-link--danger"
-                      aria-label="Remover artigo"
-                      title="Remover artigo"
-                      @click.prevent="openDeleteModal(article)"
-                    >
-                      <i class="fas fa-trash"></i>
-                    </a>
+                    <div class="admin-table__actions-inner">
+                      <a
+                        href="#"
+                        class="admin-icon-link"
+                        aria-label="Editar artigo"
+                        title="Editar artigo"
+                        @click.prevent="openEditModal(article)"
+                      >
+                        <i class="fas fa-pen"></i>
+                      </a>
+                      <a
+                        href="#"
+                        class="admin-icon-link admin-icon-link--danger"
+                        aria-label="Remover artigo"
+                        title="Remover artigo"
+                        @click.prevent="openDeleteModal(article)"
+                      >
+                        <i class="fas fa-trash"></i>
+                      </a>
+                    </div>
                   </td>
                 </tr>
               </tbody>
@@ -107,15 +100,31 @@
     </div>
 
     <b-modal
+      ref="editModal"
       v-model="isEditModalVisible"
       :title="modalTitle"
       hide-footer
       size="lg"
+      content-class="admin-modal"
+      body-class="admin-modal__body"
+      @shown="onEditModalShown"
+      @hide="onEditModalHide"
       @hidden="resetEditForm"
     >
+      <template #modal-title>
+        <div class="admin-modal__title">
+          <span>{{ modalTitle }}</span>
+          <div class="admin-modal__badges">
+            <b-badge v-if="isDirty" variant="warning" class="text-dark">Alterações não salvas</b-badge>
+            <b-badge v-else-if="isCreateMode" variant="success">Novo</b-badge>
+            <b-badge v-else variant="info">Editando</b-badge>
+          </div>
+        </div>
+      </template>
+
       <b-form @submit.prevent="saveArticle">
         <b-form-group label="Título" label-for="article-title">
-          <b-form-input id="article-title" v-model="editForm.title" required />
+          <b-form-input id="article-title" v-model="editForm.title" required @input="markDirty" />
         </b-form-group>
 
         <b-form-group label="Slug" label-for="article-slug" class="mt-3">
@@ -123,22 +132,33 @@
             id="article-slug"
             v-model="editForm.slug"
             placeholder="Deixe em branco para gerar automaticamente"
+            @input="markDirty"
           />
         </b-form-group>
 
         <b-form-group label="Rótulo publicado" label-for="article-published" class="mt-3">
-          <b-form-input id="article-published" v-model="editForm.publishedLabel" />
+          <b-form-input id="article-published" v-model="editForm.publishedLabel" @input="markDirty" />
         </b-form-group>
 
         <b-form-group label="Autor" label-for="article-author" class="mt-3">
-          <b-form-select id="article-author" v-model="editForm.authorId" :options="authorOptions" required />
+          <b-form-select
+            id="article-author"
+            v-model="editForm.authorId"
+            :options="authorOptions"
+            required
+            @change="markDirty"
+          />
         </b-form-group>
 
         <b-form-group label="Conteúdo" class="mt-3">
-          <textarea ref="postEditor" />
+          <div class="admin-content-counters text-muted">
+            <small>Parágrafos: {{ contentParagraphCount }}</small>
+            <small>Caracteres: {{ contentCharCount }}</small>
+          </div>
+          <textarea ref="postEditor"></textarea>
         </b-form-group>
 
-        <div class="d-flex justify-content-end mt-4">
+        <div class="d-flex justify-content-end mt-4 admin-modal__footer">
           <b-button type="button" variant="outline-secondary" class="me-2" @click="isEditModalVisible = false">
             Cancelar
           </b-button>
@@ -180,6 +200,7 @@ import {
 import { fetchAuthors } from '@/services/authorsService'
 import { logout } from '@/services/authService'
 import $ from 'jquery'
+import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 import 'datatables.net-bs4'
 import 'datatables.net-bs4/css/dataTables.bootstrap4.min.css'
 import 'summernote/dist/summernote-bs4.css'
@@ -207,6 +228,12 @@ export default {
       successMessage: null,
       errorMessage: null,
       selectedArticle: null,
+      editorInitialContent: '',
+      initialSnapshot: null,
+      skipUnsavedGuard: false,
+      isDirty: false,
+      contentCharCount: 0,
+      contentParagraphCount: 0,
       editForm: {
         title: '',
         slug: '',
@@ -312,8 +339,8 @@ export default {
         publishedLabel: article.published_label,
         authorId: article.author_id
       }
+      this.editorInitialContent = article.post_entry || ''
       this.isEditModalVisible = true
-      this.$nextTick(() => this.initializeEditor(article.post_entry || ''))
     },
     openCreateModal() {
       this.isCreateMode = true
@@ -324,13 +351,19 @@ export default {
         publishedLabel: '',
         authorId: this.authors[0]?.id || null
       }
+      this.editorInitialContent = ''
       this.isEditModalVisible = true
-      this.$nextTick(() => this.initializeEditor(''))
     },
     resetEditForm() {
       this.destroyEditor()
       this.selectedArticle = null
       this.isCreateMode = false
+      this.editorInitialContent = ''
+      this.initialSnapshot = null
+      this.skipUnsavedGuard = false
+      this.isDirty = false
+      this.contentCharCount = 0
+      this.contentParagraphCount = 0
       this.editForm = {
         title: '',
         slug: '',
@@ -362,6 +395,7 @@ export default {
           this.notifySuccess('Artigo atualizado com sucesso.')
         }
 
+        this.skipUnsavedGuard = true
         this.isEditModalVisible = false
         this.$nextTick(() => this.setupDataTable())
       } catch (error) {
@@ -415,6 +449,25 @@ export default {
       logout()
       this.$router.push({ name: 'admin-login' })
     },
+    onEditModalShown() {
+      // Initialize Summernote after the modal is fully visible to avoid layout glitches.
+      this.$nextTick(() => this.initializeEditor(this.editorInitialContent))
+      this.$nextTick(() => {
+        this.initialSnapshot = this.createSnapshot(this.editorInitialContent || '')
+        this.isDirty = false
+        this.updateContentStats(this.editorInitialContent || '')
+        this.focusTitle()
+      })
+    },
+    onEditModalHide(bvEvent) {
+      if (this.skipUnsavedGuard || !this.initialSnapshot) {
+        return
+      }
+      if (this.hasUnsavedChanges()) {
+        bvEvent.preventDefault()
+        this.askDiscardChanges()
+      }
+    },
     initializeEditor(content) {
       const editor = this.$refs.postEditor
       if (!editor) return
@@ -422,17 +475,25 @@ export default {
       if ($editor.data('summernote')) {
         $editor.summernote('destroy')
       }
+      const vm = this
       $editor.summernote({
         height: 280,
         placeholder: 'Conteúdo do artigo...',
         toolbar: [
           ['style', ['bold', 'italic', 'underline', 'clear']],
           ['para', ['ul', 'ol', 'paragraph']],
-          ['insert', ['link']],
+          ['insert', ['link', 'picture', 'video', 'table']],
           ['view', ['fullscreen', 'codeview']]
-        ]
+        ],
+        callbacks: {
+          onChange(contents) {
+            vm.markDirty()
+            vm.updateContentStats(contents)
+          }
+        }
       })
       $editor.summernote('code', content || '')
+      this.updateContentStats(content || '')
     },
     destroyEditor() {
       const editor = this.$refs.postEditor
@@ -450,6 +511,63 @@ export default {
         return $editor.summernote('code')
       }
       return ''
+    },
+    createSnapshot(content) {
+      return JSON.stringify({
+        ...this.editForm,
+        content: content || ''
+      })
+    },
+    hasUnsavedChanges() {
+      const currentContent = this.getEditorContent() || this.editorInitialContent || ''
+      const currentSnapshot = this.createSnapshot(currentContent)
+      return currentSnapshot !== this.initialSnapshot
+    },
+    async askDiscardChanges() {
+      const confirmed = await this.$bvModal.msgBoxConfirm(
+        'Existem alterações não salvas. Deseja descartá-las?',
+        {
+          title: 'Descartar alterações?',
+          okTitle: 'Descartar',
+          okVariant: 'danger',
+          cancelTitle: 'Continuar editando',
+          footerClass: 'justify-content-between',
+          centered: true,
+          size: 'md'
+        }
+      )
+      if (confirmed) {
+        this.skipUnsavedGuard = true
+        this.isEditModalVisible = false
+      }
+    },
+    markDirty() {
+      if (this.skipUnsavedGuard) return
+      this.isDirty = true
+    },
+    focusTitle() {
+      const el = this.$el?.querySelector('#article-title')
+      if (el) {
+        el.focus()
+      }
+    },
+    updateContentStats(content) {
+      const stats = this.computeContentStats(content)
+      this.contentCharCount = stats.chars
+      this.contentParagraphCount = stats.paragraphs
+    },
+    computeContentStats(html) {
+      if (typeof document === 'undefined') {
+        return { chars: 0, paragraphs: 0 }
+      }
+      const wrapper = document.createElement('div')
+      wrapper.innerHTML = html || ''
+      const text = (wrapper.textContent || '').trim()
+      const paragraphs = wrapper.querySelectorAll('p').length || (text ? 1 : 0)
+      return {
+        chars: text.length,
+        paragraphs
+      }
     }
   }
 }
@@ -515,19 +633,16 @@ export default {
 }
 
 .admin-table__actions {
+  min-width: 96px;
+  white-space: nowrap;
+}
+
+.admin-table__actions-inner {
   display: inline-flex;
   gap: 0.35rem;
   align-items: center;
   justify-content: flex-end;
-  min-width: 96px;
-  white-space: nowrap;
-  height: 100%;
-}
-
-.admin-table__actions::before {
-  content: '';
-  display: inline-block;
-  height: 100%;
+  width: 100%;
 }
 
 .admin-icon-link {
@@ -579,5 +694,39 @@ export default {
 .fade-leave-to {
   opacity: 0;
 }
-</style>
 
+.admin-modal {
+  border-radius: 1rem;
+}
+
+.admin-modal .modal-body {
+  padding: 1.75rem 1.75rem 0.75rem;
+}
+
+.admin-modal__footer {
+  gap: 0.75rem;
+  border-top: 1px solid rgba(12, 19, 38, 0.08);
+  padding-top: 1rem;
+}
+
+.admin-modal__title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.admin-modal__badges {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.admin-content-counters {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.35rem;
+}
+</style>
